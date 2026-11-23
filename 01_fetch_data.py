@@ -1,26 +1,72 @@
 """01: 地震の情報と波形をダウンロードして保存する"""
-from pathlib import Path
 
-from obspy import UTCDateTime
-from obspy.clients.fdsn import Client
+# ---------------------------------------------------------------
+# ライブラリの読み込み
+# ---------------------------------------------------------------
+from pathlib import Path  # フォルダやファイルのパスを扱う標準ライブラリ
 
+from obspy import UTCDateTime  # 地震学でよく使う「UTC の日時」を扱うクラス
+from obspy.clients.fdsn import Client  # 世界のデータセンターからデータを取ってくるクライアント
+
+# データを保存する data フォルダを作る（すでにあれば何もしない）
 Path("data").mkdir(exist_ok=True)
 
-# 震源情報を検索（時刻は UTC）
+# ---------------------------------------------------------------
+# 1. 震源情報（いつ・どこで・どれくらいの地震か）を検索する
+# ---------------------------------------------------------------
+# 能登半島地震の発生時刻のあたりを指定する
+# （日本時間 2024/1/1 16:10 = UTC 07:10。地震のデータは UTC で扱うのが基本）
 t = UTCDateTime("2024-01-01T07:10:00")
-cat = Client("USGS").get_events(starttime=t - 300, endtime=t + 300, minmagnitude=7.0)
-origin = cat[0].preferred_origin()
+
+# USGS（アメリカ地質調査所）のデータセンターに接続する
+usgs = Client("USGS")
+
+# 指定した時刻の前後 5 分（300 秒）に起きた、M7.0 以上の地震を検索する
+cat = usgs.get_events(starttime=t - 300, endtime=t + 300, minmagnitude=7.0)
+
+# 見つかった地震の一覧を表示する（今回は 1 件だけ見つかる）
 print(cat)
 
-# 波形と観測点の情報をダウンロード
+# 1 件目の地震の「震源情報（発生時刻・緯度・経度・深さ）」を取り出す
+origin = cat[0].preferred_origin()
+
+# ---------------------------------------------------------------
+# 2. 地震波形と観測点の情報をダウンロードする
+# ---------------------------------------------------------------
+# EarthScope（旧 IRIS）のデータセンターに接続する
 client = Client("EARTHSCOPE")
-t1, t2 = origin.time - 120, origin.time + 30 * 60
-st = client.get_waveforms("IU", "MAJO", "00", "BH?", t1, t2)
-inv = client.get_stations(network="IU", station="MAJO", location="00", channel="BH?",
-                          starttime=t1, endtime=t2, level="response")
+
+# ダウンロードする時間の範囲: 地震発生の 2 分前 から 30 分後 まで
+t1 = origin.time - 120      # 開始時刻（秒単位で足し引きできる）
+t2 = origin.time + 30 * 60  # 終了時刻（30 分 = 30 × 60 秒）
+
+# 波形データをダウンロードする
+st = client.get_waveforms(
+    "IU",     # 観測網: IU = 世界中に観測点がある Global Seismographic Network
+    "MAJO",   # 観測点: MAJO = 長野県・松代
+    "00",     # ロケーション: 同じ観測点にある複数の地震計を区別する番号
+    "BH?",    # チャンネル: BH = 広帯域地震計、? = 3 方向（Z/1/2）をまとめて
+    t1,       # 開始時刻
+    t2,       # 終了時刻
+)
+
+# 観測点の情報（位置・地震計の特性）をダウンロードする
+inv = client.get_stations(
+    network="IU",       # 観測網
+    station="MAJO",     # 観測点
+    location="00",      # ロケーション
+    channel="BH?",      # チャンネル
+    starttime=t1,       # この期間に使われていた地震計の情報を取る
+    endtime=t2,
+    level="response",   # 地震計の特性（計器応答）まで含めて取る。03 で使う
+)
+
+# ダウンロードした波形の概要を表示する（3 本の波形が入っている）
 print(st)
 
-# 保存しておく
-cat.write("data/noto_event.xml", format="QUAKEML")
-st.write("data/noto_IU.MAJO.mseed", format="MSEED")
-inv.write("data/IU.MAJO.xml", format="STATIONXML")
+# ---------------------------------------------------------------
+# 3. ファイルに保存する（02 以降のスクリプトはこれを読み込む）
+# ---------------------------------------------------------------
+cat.write("data/noto_event.xml", format="QUAKEML")    # 震源情報 → QuakeML 形式
+st.write("data/noto_IU.MAJO.mseed", format="MSEED")   # 波形 → MiniSEED 形式
+inv.write("data/IU.MAJO.xml", format="STATIONXML")    # 観測点情報 → StationXML 形式

@@ -1,23 +1,65 @@
 """03: 揺れの大きさを「速度 [m/s]」に直す・フィルタをかける"""
-import matplotlib.pyplot as plt
-from obspy import read, read_inventory
 
-st = read("data/noto_IU.MAJO.mseed")
-inv = read_inventory("data/IU.MAJO.xml")
+# ---------------------------------------------------------------
+# ライブラリの読み込み
+# ---------------------------------------------------------------
+import matplotlib.pyplot as plt  # グラフを描くライブラリ
+from obspy import read, read_inventory  # 波形・観測点情報を読み込む関数
 
-st_vel = st.copy()            # 元のデータは残しておく
+# ---------------------------------------------------------------
+# 01 で保存したデータを読み込む
+# ---------------------------------------------------------------
+st = read("data/noto_IU.MAJO.mseed")      # 波形（単位は counts = 地震計の生の出力値）
+inv = read_inventory("data/IU.MAJO.xml")  # 観測点情報（地震計の特性 = 計器応答 が入っている）
+
+# ---------------------------------------------------------------
+# 1. 計器応答を取り除いて、地面が動いた「速度 [m/s]」に直す
+# ---------------------------------------------------------------
+# ObsPy の処理は元のデータを直接書き換えるので、コピーしてから処理する
+st_vel = st.copy()
+
+# 波形全体の平均値を引いて、0 を中心に揺れるようにする
 st_vel.detrend("demean")
+
+# 波形の両端 5% をなめらかに 0 へ近づける（端の急な変化があると計算が乱れるため）
 st_vel.taper(max_percentage=0.05)
-st_vel.remove_response(inventory=inv, output="VEL", pre_filt=(0.005, 0.01, 8.0, 10.0))
-st_vel.plot(fig=plt.figure(figsize=(8, 6))).savefig("fig/03_velocity.png")
 
-for tr in st_vel:
-    print(f"{tr.id}: 最大 {abs(tr.data).max() * 100:.2f} cm/s")
+# 地震計の特性を取り除いて、物理量に変換する
+st_vel.remove_response(
+    inventory=inv,                       # 地震計の特性が入った観測点情報
+    output="VEL",                        # 出力: "VEL"=速度[m/s]（"DISP"=変位、"ACC"=加速度 も選べる）
+    pre_filt=(0.005, 0.01, 8.0, 10.0),   # 計算を安定させるため、0.01〜8 Hz 以外を弱めるフィルタ
+)
 
-# 10〜50 秒周期のゆっくりした揺れだけを見る
-st_bp = st_vel.copy().filter("bandpass", freqmin=0.02, freqmax=0.1)
-st_bp.plot(fig=plt.figure(figsize=(8, 6))).savefig("fig/03_bandpass.png")
+# 速度に直した 3 本の波形を描いて保存する
+fig1 = plt.figure(figsize=(8, 6))      # 図を用意する
+st_vel.plot(fig=fig1)                  # 3 本の波形を描く（縦軸が m/s になっている）
+fig1.savefig("fig/03_velocity.png")    # 画像ファイルとして保存する
 
+# 各方向の最大の速さを表示する
+for tr in st_vel:                          # 3 本の波形を 1 本ずつ見る
+    max_vel = abs(tr.data).max()           # 振幅の絶対値の最大値 [m/s]
+    print(f"{tr.id}: 最大 {max_vel * 100:.2f} cm/s")  # m/s → cm/s に直して表示する
+
+# ---------------------------------------------------------------
+# 2. バンドパスフィルタで、ゆっくりした揺れだけを取り出す
+# ---------------------------------------------------------------
+st_bp = st_vel.copy()   # 速度の波形はこの後も使うので、コピーしてからフィルタをかける
+
+# 0.02〜0.1 Hz（周期 10〜50 秒）の成分だけを残す
+st_bp.filter("bandpass", freqmin=0.02, freqmax=0.1)
+
+# フィルタ後の波形を描いて保存する
+fig2 = plt.figure(figsize=(8, 6))      # 図を用意する
+st_bp.plot(fig=fig2)                   # 3 本の波形を描く
+fig2.savefig("fig/03_bandpass.png")    # 画像ファイルとして保存する
+
+# ---------------------------------------------------------------
+# 3. 速度の波形を保存する（04 で使う）
+# ---------------------------------------------------------------
 st_vel.write("data/noto_IU.MAJO_vel.mseed", format="MSEED")
 
-plt.show()  # 図をウィンドウで表示（閉じるとスクリプトが終わります）
+# ---------------------------------------------------------------
+# 作った図をウィンドウで表示する（すべて閉じるとスクリプトが終わる）
+# ---------------------------------------------------------------
+plt.show()
