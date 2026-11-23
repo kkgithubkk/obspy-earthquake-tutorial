@@ -7,13 +7,49 @@ Qiita の記事「Pythonで地震を解析するならObsPy。地震波形の取
 
 ![spectrogram](fig/04_spectrogram.png)
 
-## 環境構築
+## 必要なもの
+
+- **Apple Silicon（M1 以降）の Mac**
+- **Python 3.14**
+- インターネット接続（地震データのダウンロードに使います）
+
+> [!NOTE]
+> ObsPy は今のところ、Intel Mac 向けと Python 3.15 向けのインストール済みパッケージ（wheel）を配布していません。上の組み合わせで実行してください。
+
+## 準備（macOS）
+
+以下のコマンドは **ターミナル**（`⌘ + スペース` →「ターミナル」）で実行します。
+
+### 1. Python 3.14 をインストールする
+
+1. [python.org](https://www.python.org/downloads/macos/) から **Python 3.14.x** の「macOS 64-bit universal2 installer」をダウンロードしてインストールします
+2. インストール後に開く `アプリケーション > Python 3.14` フォルダで、**`Install Certificates.command` をダブルクリック** します
+   （これを忘れると、データのダウンロード時に `SSL: CERTIFICATE_VERIFY_FAILED` になります）
+3. 確認:
+
+   ```bash
+   python3.14 --version
+   ```
+
+### 2. このリポジトリをダウンロードする
+
+緑色の「Code」ボタン →「Download ZIP」でダウンロードして解凍し、そのフォルダに移動します。
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate      # Windows は .venv\Scripts\activate
-pip install -r requirements.txt
+cd ~/Downloads/obspy-earthquake-tutorial-main
 ```
+
+（Git を使う場合は `git clone https://github.com/kkgithubkk/obspy-earthquake-tutorial.git` でも OK）
+
+### 3. 仮想環境を作って ObsPy をインストールする
+
+```bash
+python3.14 -m venv .venv          # 仮想環境を作る（最初の 1 回だけ）
+source .venv/bin/activate         # 仮想環境に入る（行頭に (.venv) と出ればOK）
+pip install -r requirements.txt   # ObsPy をインストール
+```
+
+ターミナルを開き直したときは、フォルダに移動して `source .venv/bin/activate` からやり直してください。
 
 ## 実行
 
@@ -43,5 +79,6 @@ python 04_spectrum.py     # FFT とスペクトログラムで周波数を調べ
 
 ## 動作確認環境
 
+- macOS（Apple Silicon）
 - Python 3.14
-- ObsPy 1.5.1
+- ObsPy 1.5.2
