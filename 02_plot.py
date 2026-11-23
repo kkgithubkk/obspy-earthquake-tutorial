@@ -13,7 +13,7 @@ inv = read_inventory("data/IU.MAJO.xml")
 origin = read_events("data/noto_event.xml")[0].preferred_origin()
 
 # plot() 一発
-st.plot(outfile="fig/01_raw_stream.png")
+st.plot(fig=plt.figure(figsize=(8, 6))).savefig("fig/01_raw_stream.png")
 
 # 震源から観測点までの距離
 coords = inv.get_coordinates(st[0].id, origin.time)
@@ -42,3 +42,5 @@ plt.xlabel("Time since origin [s]")
 plt.legend()
 plt.tight_layout()
 plt.savefig("fig/02_bhz_with_taup.png", dpi=150)
+
+plt.show()  # 図をウィンドウで表示（閉じるとスクリプトが終わります）

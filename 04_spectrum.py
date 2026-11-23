@@ -30,3 +30,5 @@ ax.set_ylim(0.05, 20)
 ax.set_xlabel("Time [s]")
 ax.set_ylabel("Frequency [Hz]")
 fig.savefig("fig/04_spectrogram.png", dpi=150)
+
+plt.show()  # 図をウィンドウで表示（閉じるとスクリプトが終わります）
