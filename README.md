@@ -10,28 +10,44 @@ Qiita の記事「Pythonで地震を解析するならObsPy。地震波形の取
 ## 必要なもの
 
 - **Apple Silicon（M1 以降）の Mac**
-- **Python 3.14**
+- **Homebrew でインストールした Python 3.14**
 - インターネット接続（地震データのダウンロードに使います）
 
 > [!NOTE]
-> ObsPy は今のところ、Intel Mac 向けと Python 3.15 向けのインストール済みパッケージ（wheel）を配布していません。上の組み合わせで実行してください。
+> 上の環境で動作を確認しています。ObsPy は今のところ、Intel Mac 向けと Python 3.15 向けのインストール済みパッケージ（wheel）を配布していません。
 
 ## 準備（macOS）
 
 以下のコマンドは **ターミナル**（`⌘ + スペース` →「ターミナル」）で実行します。
 
-### 1. Python 3.14 をインストールする
+### 1. Homebrew をインストールする
 
-1. [python.org](https://www.python.org/downloads/macos/) から **Python 3.14.x** の「macOS 64-bit universal2 installer」をダウンロードしてインストールします
-2. インストール後に開く `アプリケーション > Python 3.14` フォルダで、**`Install Certificates.command` をダブルクリック** します
-   （これを忘れると、データのダウンロード時に `SSL: CERTIFICATE_VERIFY_FAILED` になります）
-3. 確認:
+すでに入っている場合は 2 へ。[Homebrew 公式サイト](https://brew.sh/ja/) のコマンドを実行します。
 
-   ```bash
-   python3.14 --version
-   ```
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
-### 2. このリポジトリをダウンロードする
+終了時に表示される **Next steps** のコマンドも実行して、`brew` を使えるようにします。
+
+```bash
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+```
+
+### 2. Python 3.14 をインストールする
+
+最新版（3.15）ではなく、バージョンを指定して 3.14 を入れます。
+
+```bash
+brew install python@3.14
+python3.14 --version   # Python 3.14.x と出ればOK
+```
+
+> [!TIP]
+> python.org のインストーラ版 Python は未検証です。使う場合は、インストール後に `アプリケーション > Python 3.14` の `Install Certificates.command` を実行してください（しないとデータのダウンロードで `SSL: CERTIFICATE_VERIFY_FAILED` になります）。
+
+### 3. このリポジトリをダウンロードする
 
 緑色の「Code」ボタン →「Download ZIP」でダウンロードして解凍し、そのフォルダに移動します。
 
@@ -41,7 +57,7 @@ cd ~/Downloads/obspy-earthquake-tutorial-main
 
 （Git を使う場合は `git clone https://github.com/kkgithubkk/obspy-earthquake-tutorial.git` でも OK）
 
-### 3. 仮想環境を作って ObsPy をインストールする
+### 4. 仮想環境を作って ObsPy をインストールする
 
 ```bash
 python3.14 -m venv .venv          # 仮想環境を作る（最初の 1 回だけ）
@@ -80,5 +96,5 @@ python 04_spectrum.py     # FFT とスペクトログラムで周波数を調べ
 ## 動作確認環境
 
 - macOS（Apple Silicon）
-- Python 3.14
+- Python 3.14.10（Homebrew の python@3.14）
 - ObsPy 1.5.2
